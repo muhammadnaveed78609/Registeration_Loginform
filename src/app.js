@@ -2,6 +2,8 @@ const express = require("express");
 const path = require("path");
 const hbs = require("hbs");
 const app = express();
+const bycrypt = require("bcryptjs");
+const jwt = require("jsonwebtoken");
 require("../db/conn");
 const RegisterData = require("../models/Register");
 const port = process.env.PORT || 8000;
@@ -40,6 +42,8 @@ app.post("/register", async (req, res) => {
         password: Password,
         re_typepass: password_repeat,
       });
+      console.log("Parse data is  " + user);
+      const token = await user.generateAuthToken();
       const data = await user.save();
       console.log(data);
       res.status(200).render("index");
@@ -55,7 +59,9 @@ app.post("/login", async (req, res) => {
     const uemail = req.body.email;
     const passworrd = req.body.password;
     const useremail = await RegisterData.findOne({ email: uemail });
-    if (useremail.password == passworrd) {
+    const isMatch = await bycrypt.compare(passworrd, useremail.password);
+    const token = await user.generateAuthToken();
+    if (isMatch) {
       res.status(200).send("Password Matched");
     } else {
       res.status(400).send("Password Not Matched");
