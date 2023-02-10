@@ -4,6 +4,7 @@ const hbs = require("hbs");
 const app = express();
 const bycrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
+const cokiesParser = require("cookie-parser");
 require("../db/conn");
 const RegisterData = require("../models/Register");
 const port = process.env.PORT || 8000;
@@ -13,6 +14,7 @@ const partialpath = path.join(__dirname, "../partials");
 const viewpath = path.join(__dirname, "../views");
 // console.log(path.join(templateptah));
 app.use(express.json());
+app.use(cokiesParser());
 app.use(express.urlencoded({ extended: false }));
 app.use(express.static(templateptah));
 app.set("view engine", "hbs");
@@ -44,6 +46,10 @@ app.post("/register", async (req, res) => {
       });
       console.log("Parse data is  " + user);
       const token = await user.generateAuthToken();
+      res.cookie("jwt", token, {
+        expires: new Date(Date.now() + 50000),
+        httpOnly: true,
+      });
       const data = await user.save();
       console.log(data);
       res.status(200).render("index");
@@ -61,6 +67,12 @@ app.post("/login", async (req, res) => {
     const useremail = await RegisterData.findOne({ email: uemail });
     const isMatch = await bycrypt.compare(passworrd, useremail.password);
     const token = await user.generateAuthToken();
+    res.cookie("jwt", token, {
+      expires: new Date(Date.now() + 50000),
+      httpOnly: true,
+      //secure:true
+    });
+    //console.log(`This is the cookie valid token ${req.cookies.jwt}`)
     if (isMatch) {
       res.status(200).send("Password Matched");
     } else {
